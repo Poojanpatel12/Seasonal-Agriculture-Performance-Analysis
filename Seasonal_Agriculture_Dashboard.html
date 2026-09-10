@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seasonal Agriculture Performance — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --soil-900:#12211A;
+    --soil-800:#1A2E23;
+    --soil-700:#22392B;
+    --soil-600:#2E4A38;
+    --paper:#EFE9D8;
+    --paper-dim:#B9C2B4;
+    --paper-mute:#8FA091;
+    --kharif:#4FA48C;
+    --kharif-soft:#4FA48C33;
+    --rabi:#E0983D;
+    --rabi-soft:#E0983D33;
+    --zaid:#C2603E;
+    --zaid-soft:#C2603E33;
+    --gold:#E8B75C;
+    --line: #3C5445;
+    --danger:#D46A5A;
+    --good:#7DBE96;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, #1F3A2C 0%, transparent 60%),
+      var(--soil-900);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    padding-bottom:60px;
+  }
+  h1,h2,h3{font-family:'Fraunces', serif; margin:0; color:var(--paper);}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    padding:44px 0 30px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:34px;
+  }
+  .kicker{
+    color:var(--gold);
+    font-size:13px;
+    letter-spacing:0.02em;
+    margin-bottom:10px;
+  }
+  header.top h1{
+    font-size:42px;
+    font-weight:600;
+    line-height:1.08;
+    max-width:780px;
+  }
+  header.top .sub{
+    color:var(--paper-dim);
+    max-width:620px;
+    margin-top:14px;
+    font-size:15.5px;
+  }
+  .season-tabs{
+    display:flex; gap:8px; margin-top:28px; flex-wrap:wrap;
+  }
+  .season-tab{
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--paper-dim);
+    padding:9px 18px;
+    border-radius:100px;
+    font-family:'IBM Plex Sans';
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    transition:all .18s ease;
+  }
+  .season-tab:hover{ border-color:var(--paper-mute); color:var(--paper); }
+  .season-tab.active{ color:var(--soil-900); font-weight:600; border-color:transparent; }
+  .season-tab[data-season="All"].active{ background:var(--gold); }
+  .season-tab[data-season="Kharif"].active{ background:var(--kharif); }
+  .season-tab[data-season="Rabi"].active{ background:var(--rabi); }
+  .season-tab[data-season="Zaid"].active{ background:var(--zaid); }
+  .season-dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align:middle;}
+
+  /* ---------- KPI strip ---------- */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:52px;
+  }
+  .kpi{
+    background:var(--soil-800);
+    padding:22px 20px;
+  }
+  .kpi .label{ font-size:12.5px; color:var(--paper-mute); margin-bottom:10px;}
+  .kpi .value{ font-family:'Fraunces', serif; font-size:28px; font-weight:600; color:var(--paper);}
+  .kpi .value span{ font-size:15px; font-weight:400; color:var(--paper-dim); }
+  .kpi .delta{ font-size:12px; margin-top:6px; color:var(--paper-mute); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-bottom:58px; }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:22px; gap:20px; flex-wrap:wrap;
+  }
+  .section-head h2{ font-size:24px; font-weight:600; }
+  .section-head .note{ color:var(--paper-mute); font-size:13.5px; max-width:420px; text-align:right;}
+  .eyebrow{ color:var(--paper-mute); font-size:12.5px; margin-bottom:6px; }
+
+  .grid-2{ display:grid; grid-template-columns:1.1fr 0.9fr; gap:22px; }
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width:900px){ .grid-2{grid-template-columns:1fr;} .grid-3{grid-template-columns:1fr;} .kpi-grid{grid-template-columns:repeat(2,1fr);} }
+
+  .panel{
+    background:var(--soil-800);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px 24px;
+  }
+  .panel h3{ font-size:15px; font-weight:600; margin-bottom:16px; color:var(--paper);}
+  .chart-box{ position:relative; height:260px; }
+  .chart-box.tall{ height:320px; }
+
+  .stat-row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px dashed var(--line); font-size:14px;}
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row .k{ color:var(--paper-dim); }
+  .stat-row .v{ font-family:'IBM Plex Mono'; color:var(--paper); }
+
+  /* ---------- Heatmap tables ---------- */
+  .heatmap{ width:100%; border-collapse:collapse; font-size:13px; }
+  .heatmap th{ text-align:left; padding:8px 10px; color:var(--paper-mute); font-weight:500; font-size:12px; border-bottom:1px solid var(--line);}
+  .heatmap td{ padding:8px 10px; text-align:center; font-family:'IBM Plex Mono'; border-bottom:1px solid var(--soil-700); }
+  .heatmap td.rowlabel{ text-align:left; font-family:'IBM Plex Sans'; color:var(--paper); font-weight:500; }
+  .heatmap-toggle{ display:flex; gap:6px; }
+  .heatmap-toggle button{
+    background:transparent; border:1px solid var(--line); color:var(--paper-dim);
+    padding:5px 12px; border-radius:8px; font-size:12.5px; cursor:pointer;
+  }
+  .heatmap-toggle button.active{ background:var(--gold); color:var(--soil-900); border-color:var(--gold); font-weight:600;}
+
+  /* ---------- Correlation ---------- */
+  .corr-table{ font-size:11px; border-collapse:collapse; width:100%; }
+  .corr-table th{ padding:4px; color:var(--paper-mute); font-weight:400; }
+  .corr-table td{ width:34px; height:28px; text-align:center; font-family:'IBM Plex Mono'; font-size:10.5px; }
+  .corr-label{ text-align:right !important; padding-right:8px !important; color:var(--paper-dim); font-size:10.5px; }
+
+  /* ---------- Insight cards ---------- */
+  .insight-list{ display:flex; flex-direction:column; gap:0; }
+  .insight{
+    display:grid; grid-template-columns:40px 1fr; gap:16px;
+    padding:18px 0; border-bottom:1px solid var(--line);
+  }
+  .insight:last-child{ border-bottom:none; }
+  .insight .num{ font-family:'Fraunces', serif; font-size:22px; color:var(--gold); }
+  .insight .body h4{ margin:0 0 6px; font-size:15px; font-weight:600; color:var(--paper); font-family:'IBM Plex Sans';}
+  .insight .body p{ margin:0; font-size:14px; color:var(--paper-dim); }
+
+  .anova-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .anova-card{ background:var(--soil-700); border-radius:10px; padding:16px; text-align:center;}
+  .anova-card .metric{ font-size:12.5px; color:var(--paper-mute); margin-bottom:8px;}
+  .anova-card .pval{ font-family:'IBM Plex Mono'; font-size:18px; }
+  .anova-card .tag{ display:inline-block; margin-top:8px; font-size:11px; padding:3px 10px; border-radius:100px; }
+  .tag.sig{ background:#7DBE9633; color:var(--good); }
+  .tag.nosig{ background:#8FA09133; color:var(--paper-mute); }
+
+  footer{ text-align:center; color:var(--paper-mute); font-size:12.5px; margin-top:20px;}
+  footer a{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="kicker">VOIS AICTE Batch 1 2026–2027 · Major Project</div>
+    <h1>Seasonal Agriculture Performance Dashboard</h1>
+    <p class="sub">4,000 farm records across 8 states, 8 crops and three growing seasons — Kharif, Rabi and Zaid — explored for yield, cost, resource-use and climate patterns.</p>
+    <div class="season-tabs" id="seasonTabs">
+      <button class="season-tab active" data-season="All">All Seasons</button>
+      <button class="season-tab" data-season="Kharif"><span class="season-dot" style="background:var(--kharif)"></span>Kharif</button>
+      <button class="season-tab" data-season="Rabi"><span class="season-dot" style="background:var(--rabi)"></span>Rabi</button>
+      <button class="season-tab" data-season="Zaid"><span class="season-dot" style="background:var(--zaid)"></span>Zaid</button>
+    </div>
+  </header>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- CLIMATE -->
+  <section>
+    <div class="section-head">
+      <h2>Climate &amp; Growing Conditions</h2>
+      <div class="note">Kharif rides the monsoon; Rabi is the cool, drier winter crop; Zaid is the short, hot summer window.</div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Environmental profile by season</h3>
+        <div class="chart-box tall"><canvas id="climateRadar"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Season averages</h3>
+        <div id="climateStats"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- YIELD -->
+  <section>
+    <div class="section-head">
+      <h2>Yield &amp; Production</h2>
+      <div class="note">Median, interquartile range and 95th percentile of yield (tonnes/hectare) per season.</div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Yield spread by season (t/ha)</h3>
+        <div class="chart-box"><canvas id="yieldRange"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Crop mix per season</h3>
+        <div class="chart-box"><canvas id="cropMix"></canvas></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <h3>Average yield (t/ha) — Crop × Season</h3>
+      <div id="cropYieldHeatmap"></div>
+    </div>
+  </section>
+
+  <!-- ECONOMICS -->
+  <section>
+    <div class="section-head">
+      <h2>Economic Performance</h2>
+      <div class="note">Roughly half of all farms in the dataset record a net loss, in every season.</div>
+    </div>
+    <div class="grid-3">
+      <div class="panel">
+        <h3>Avg. cost vs revenue (₹)</h3>
+        <div class="chart-box"><canvas id="costRevenue"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Profit spread (₹)</h3>
+        <div class="chart-box"><canvas id="profitRange"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Loss-making farms</h3>
+        <div class="chart-box"><canvas id="lossDonut"></canvas></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <h3>Average profit (₹) — Crop × Season</h3>
+      <div id="cropProfitHeatmap"></div>
+    </div>
+  </section>
+
+  <!-- RESOURCES -->
+  <section>
+    <div class="section-head">
+      <h2>Resource Usage</h2>
+      <div class="note">Zaid's dry heat pushes irrigation dependency up and water efficiency down.</div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Fertilizer, pesticide &amp; water use</h3>
+        <div class="chart-box"><canvas id="resourceBars"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Irrigation method share (%)</h3>
+        <div class="chart-box"><canvas id="irrigationStack"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGIONAL -->
+  <section>
+    <div class="section-head">
+      <h2>Regional Seasonal Patterns</h2>
+      <div class="note">The best-performing season differs by state — a single national seasonal calendar doesn't fit everyone.</div>
+    </div>
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+        <h3 style="margin:0;">State × Season</h3>
+        <div class="heatmap-toggle" id="stateToggle">
+          <button class="active" data-metric="yield">Yield (t/ha)</button>
+          <button data-metric="profit">Profit (₹)</button>
+        </div>
+      </div>
+      <div id="stateHeatmap"></div>
+    </div>
+  </section>
+
+  <!-- CORRELATION / STATS -->
+  <section>
+    <div class="section-head">
+      <h2>Relationships &amp; Statistical Significance</h2>
+      <div class="note">One-way ANOVA tests whether seasonal differences are real, not random noise.</div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Correlation matrix</h3>
+        <div id="corrTable" style="overflow-x:auto;"></div>
+      </div>
+      <div class="panel">
+        <h3>ANOVA across Kharif / Rabi / Zaid</h3>
+        <div class="anova-grid" id="anovaGrid"></div>
+        <p style="margin-top:16px; font-size:13px; color:var(--paper-dim);">A result is marked significant when p &lt; 0.05 — meaning the seasonal difference is very unlikely to be due to chance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section>
+    <div class="section-head">
+      <h2>Insights &amp; Recommendations</h2>
+    </div>
+    <div class="panel">
+      <div class="insight-list" id="insightList"></div>
+    </div>
+  </section>
+
+  <footer>Seasonal Agriculture Performance Analysis · 4,000 records · Kharif / Rabi / Zaid</footer>
+</div>
+
+<script id="dashboard-data" type="application/json">{"overall":{"records":4000,"states":8,"crops":8,"districts":10,"avg_yield":5.18,"avg_profit":111556,"loss_pct":49.2,"total_production":172984},"season_kpi":{"Kharif":{"records":1779,"avg_yield":5.5,"avg_profit":178914,"loss_pct":42.2,"total_production":82387,"avg_rainfall":852.1,"avg_temp":28.5,"avg_humidity":71.8,"avg_sunlight":6.8,"avg_soil_moisture":31.2,"avg_cost":531804,"avg_revenue":710719,"avg_fertilizer":187.1,"avg_pesticide":5.08,"avg_water":6102,"avg_water_eff":5.71,"avg_disease_risk":54.5},"Rabi":{"records":1627,"avg_yield":5.03,"avg_profit":87689,"loss_pct":51.1,"total_production":67498,"avg_rainfall":435.9,"avg_temp":23.5,"avg_humidity":57.9,"avg_sunlight":7.6,"avg_soil_moisture":24.1,"avg_cost":513836,"avg_revenue":601526,"avg_fertilizer":185.4,"avg_pesticide":5.02,"avg_water":5846,"avg_water_eff":5.12,"avg_disease_risk":40.5},"Zaid":{"records":594,"avg_yield":4.64,"avg_profit":-24804,"loss_pct":64.5,"total_production":23098,"avg_rainfall":299.1,"avg_temp":31.0,"avg_humidity":52.0,"avg_sunlight":8.2,"avg_soil_moisture":19.2,"avg_cost":543976,"avg_revenue":519171,"avg_fertilizer":184.6,"avg_pesticide":5.17,"avg_water":6419,"avg_water_eff":4.41,"avg_disease_risk":38.2}},"env_raw":{"Kharif":{"Rainfall_mm":852.11,"Avg_Temperature_C":28.45,"Humidity_pct":71.81,"Sunlight_Hours_Day":6.79,"Soil_Moisture_pct":31.2},"Rabi":{"Rainfall_mm":435.94,"Avg_Temperature_C":23.49,"Humidity_pct":57.89,"Sunlight_Hours_Day":7.59,"Soil_Moisture_pct":24.05},"Zaid":{"Rainfall_mm":299.12,"Avg_Temperature_C":31.04,"Humidity_pct":52.01,"Sunlight_Hours_Day":8.18,"Soil_Moisture_pct":19.17}},"crop_season_yield":{"Chilli":{"Kharif":1.73,"Rabi":1.46,"Zaid":1.18},"Cotton":{"Kharif":1.37,"Rabi":1.19,"Zaid":0.95},"Groundnut":{"Kharif":1.48,"Rabi":1.22,"Zaid":1.04},"Maize":{"Kharif":2.97,"Rabi":2.62,"Zaid":2.3},"Pulses":{"Kharif":1.04,"Rabi":0.87,"Zaid":0.65},"Rice":{"Kharif":2.71,"Rabi":2.33,"Zaid":1.9},"Sugarcane":{"Kharif":51.57,"Rabi":43.17,"Zaid":38.42},"Wheat":{"Kharif":2.26,"Rabi":2.06,"Zaid":1.75}},"crop_season_profit":{"Chilli":{"Kharif":954380.0,"Rabi":638572.0,"Zaid":448659.0},"Cotton":{"Kharif":217000.0,"Rabi":107344.0,"Zaid":-53925.0},"Groundnut":{"Kharif":108265.0,"Rabi":10417.0,"Zaid":-68872.0},"Maize":{"Kharif":-39333.0,"Rabi":-89133.0,"Zaid":-194049.0},"Pulses":{"Kharif":43339.0,"Rabi":-14309.0,"Zaid":-139228.0},"Rice":{"Kharif":-64903.0,"Rabi":-98428.0,"Zaid":-227239.0},"Sugarcane":{"Kharif":1000791.0,"Rabi":731613.0,"Zaid":583636.0},"Wheat":{"Kharif":-105872.0,"Rabi":-119955.0,"Zaid":-193209.0}},"crops":["Chilli","Cotton","Groundnut","Maize","Pulses","Rice","Sugarcane","Wheat"],"state_season_yield":{"Andhra Pradesh":{"Kharif":5.45,"Rabi":3.34,"Zaid":4.44},"Gujarat":{"Kharif":6.06,"Rabi":5.52,"Zaid":4.07},"Karnataka":{"Kharif":6.24,"Rabi":4.74,"Zaid":6.62},"Madhya Pradesh":{"Kharif":5.93,"Rabi":3.76,"Zaid":5.46},"Maharashtra":{"Kharif":5.39,"Rabi":5.46,"Zaid":2.27},"Punjab":{"Kharif":4.08,"Rabi":8.45,"Zaid":5.91},"Tamil Nadu":{"Kharif":5.43,"Rabi":4.5,"Zaid":4.1},"Telangana":{"Kharif":5.42,"Rabi":4.8,"Zaid":4.24}},"state_season_profit":{"Andhra Pradesh":{"Kharif":169316.0,"Rabi":26316.0,"Zaid":-84085.0},"Gujarat":{"Kharif":217051.0,"Rabi":82846.0,"Zaid":-106930.0},"Karnataka":{"Kharif":201226.0,"Rabi":70953.0,"Zaid":23311.0},"Madhya Pradesh":{"Kharif":134242.0,"Rabi":61576.0,"Zaid":210.0},"Maharashtra":{"Kharif":168801.0,"Rabi":159582.0,"Zaid":-40598.0},"Punjab":{"Kharif":133779.0,"Rabi":169295.0,"Zaid":62110.0},"Tamil Nadu":{"Kharif":211304.0,"Rabi":70457.0,"Zaid":-15175.0},"Telangana":{"Kharif":199668.0,"Rabi":62825.0,"Zaid":-34621.0}},"states":["Andhra Pradesh","Gujarat","Karnataka","Madhya Pradesh","Maharashtra","Punjab","Tamil Nadu","Telangana"],"irrigation":{"Kharif":{"Drip":22.8,"Flood":33.2,"Rainfed":26.0,"Sprinkler":18.0},"Rabi":{"Drip":22.7,"Flood":32.3,"Rainfed":26.9,"Sprinkler":18.0},"Zaid":{"Drip":23.6,"Flood":32.7,"Rainfed":23.6,"Sprinkler":20.2}},"irrigation_methods":["Drip","Flood","Rainfed","Sprinkler"],"yield_box":{"Kharif":{"min":0.3,"q1":1.18,"median":1.95,"q3":3.1,"max":44.26},"Rabi":{"min":0.3,"q1":1.02,"median":1.66,"q3":2.74,"max":36.91},"Zaid":{"min":0.3,"q1":0.85,"median":1.45,"q3":2.28,"max":36.08}},"profit_box":{"Kharif":{"min":-521997,"q1":-108481,"median":38808,"q3":285549,"max":1458851},"Rabi":{"min":-468307,"q1":-145342,"median":-3187,"q3":183358,"max":1065903},"Zaid":{"min":-581363,"q1":-254893,"median":-62144,"q3":62730,"max":837576}},"corr_cols":["Rainfall_mm","Avg_Temperature_C","Humidity_pct","Sunlight_Hours_Day","Soil_Moisture_pct","Fertilizer_kg_ha","Water_Used_m3","Yield_Tonnes_Ha","Profit_INR","Disease_Pest_Risk_pct"],"corr_matrix":[[1.0,0.2,0.53,-0.37,0.52,0.02,0.0,0.03,0.11,0.62],[0.2,1.0,0.14,-0.03,0.08,0.02,0.02,0.01,0.01,0.25],[0.53,0.14,1.0,-0.3,0.45,0.02,-0.0,0.01,0.06,0.55],[-0.37,-0.03,-0.3,1.0,-0.3,-0.01,-0.01,-0.01,-0.05,-0.25],[0.52,0.08,0.45,-0.3,1.0,0.01,0.0,0.01,0.09,0.38],[0.02,0.02,0.02,-0.01,0.01,1.0,0.0,-0.0,-0.07,0.02],[0.0,0.02,-0.0,-0.01,0.0,0.0,1.0,0.39,0.19,0.01],[0.03,0.01,0.01,-0.01,0.01,-0.0,0.39,1.0,0.49,0.01],[0.11,0.01,0.06,-0.05,0.09,-0.07,0.19,0.49,1.0,0.07],[0.62,0.25,0.55,-0.25,0.38,0.02,0.01,0.01,0.07,1.0]],"anova":{"Yield_Tonnes_Ha":{"f":1.18,"p":0.307898,"significant":false},"Profit_INR":{"f":34.29,"p":0.0,"significant":true},"Rainfall_mm":{"f":3449.4,"p":0.0,"significant":true},"Disease_Pest_Risk_pct":{"f":1049.47,"p":0.0,"significant":true}},"crop_counts":{"Kharif":{"Chilli":185,"Cotton":215,"Groundnut":193,"Maize":234,"Pulses":221,"Rice":314,"Sugarcane":125,"Wheat":292},"Rabi":{"Chilli":163,"Cotton":201,"Groundnut":177,"Maize":233,"Pulses":213,"Rice":274,"Sugarcane":129,"Wheat":237},"Zaid":{"Chilli":64,"Cotton":92,"Groundnut":54,"Maize":84,"Pulses":62,"Rice":102,"Sugarcane":51,"Wheat":85}}}
+</script>
+<script>
+const DATA = JSON.parse(document.getElementById('dashboard-data').textContent);
+const SEASONS = ['Kharif','Rabi','Zaid'];
+const COLORS = { Kharif:'#4FA48C', Rabi:'#E0983D', Zaid:'#C2603E', All:'#E8B75C' };
+const TEXT_DIM = '#B9C2B4';
+const GRID = '#3C5445';
+
+Chart.defaults.color = TEXT_DIM;
+Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.borderColor = GRID;
+
+let currentSeason = 'All';
+let stateMetric = 'yield';
+const charts = {};
+
+function fmtINR(n){
+  const sign = n<0? '-':'';
+  n = Math.abs(n);
+  if(n>=100000) return sign+'₹'+(n/100000).toFixed(1)+'L';
+  if(n>=1000) return sign+'₹'+(n/1000).toFixed(0)+'k';
+  return sign+'₹'+n;
+}
+function fmtT(n){ return n.toLocaleString('en-IN')+' t'; }
+
+// ---------------- KPI STRIP ----------------
+function renderKPIs(){
+  const grid = document.getElementById('kpiGrid');
+  let d, labelPrefix;
+  if(currentSeason==='All'){
+    d = DATA.overall; labelPrefix='All seasons';
+  } else {
+    d = DATA.season_kpi[currentSeason]; labelPrefix=currentSeason;
+  }
+  const items = [
+    {label:'Farm records', value: d.records.toLocaleString('en-IN')},
+    {label:'Avg. yield', value: d.avg_yield, unit:'t/ha'},
+    {label:'Avg. profit / farm', value: fmtINR(d.avg_profit)},
+    {label:'Loss-making farms', value: d.loss_pct+'%'},
+    {label:'Total production', value: fmtT(d.total_production)},
+  ];
+  grid.innerHTML = items.map(it=>`
+    <div class="kpi">
+      <div class="label">${it.label} <span class="mono" style="color:var(--paper-mute)">· ${labelPrefix}</span></div>
+      <div class="value">${it.value}${it.unit? ' <span>'+it.unit+'</span>':''}</div>
+    </div>`).join('');
+}
+
+// ---------------- CLIMATE RADAR ----------------
+function renderClimate(){
+  const labels = ['Rainfall (mm)','Temperature (°C)','Humidity (%)','Sunlight (hrs)','Soil Moisture (%)'];
+  const maxVals = [900, 35, 80, 9, 35]; // rough normalization ceiling per axis
+  const keys = ['Rainfall_mm','Avg_Temperature_C','Humidity_pct','Sunlight_Hours_Day','Soil_Moisture_pct'];
+  const datasets = SEASONS.map(s=>({
+    label:s,
+    data: keys.map((k,i)=> +(DATA.env_raw[s][k]/maxVals[i]*100).toFixed(1)),
+    borderColor: COLORS[s],
+    backgroundColor: COLORS[s]+'22',
+    pointBackgroundColor: COLORS[s],
+    borderWidth:2,
+  }));
+  charts.radar = new Chart(document.getElementById('climateRadar'), {
+    type:'radar',
+    data:{ labels, datasets },
+    options:{
+      maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{boxWidth:10, padding:16} },
+        tooltip:{ callbacks:{ label: (ctx)=>{
+          const key = keys[ctx.dataIndex];
+          return ctx.dataset.label+': '+DATA.env_raw[ctx.dataset.label][key];
+        }}}
+      },
+      scales:{ r:{ grid:{color:GRID}, angleLines:{color:GRID}, pointLabels:{color:TEXT_DIM, font:{size:11}}, ticks:{display:false} } }
+    }
+  });
+
+  const box = document.getElementById('climateStats');
+  const rows = [
+    ['Rainfall', 'Rainfall_mm', 'mm'],
+    ['Temperature', 'Avg_Temperature_C', '°C'],
+    ['Humidity', 'Humidity_pct', '%'],
+    ['Sunlight', 'Sunlight_Hours_Day', 'hrs/day'],
+    ['Soil moisture', 'Soil_Moisture_pct', '%'],
+  ];
+  box.innerHTML = rows.map(([label,key,unit])=>`
+    <div class="stat-row"><div class="k">${label}</div>
+    <div class="v">${SEASONS.map(s=>`<span style="color:${COLORS[s]}">${DATA.env_raw[s][key]}${unit==='%'||unit==='°C'?'':''}</span>`).join(' &nbsp;/&nbsp; ')} ${unit}</div></div>
+  `).join('');
+}
+
+// ---------------- YIELD RANGE (floating bar) ----------------
+function renderYieldRange(){
+  const data = SEASONS.map(s=>{
+    const b = DATA.yield_box[s];
+    return [b.q1, b.q3];
+  });
+  const medians = SEASONS.map(s=>DATA.yield_box[s].median);
+  charts.yieldRange = new Chart(document.getElementById('yieldRange'), {
+    type:'bar',
+    data:{
+      labels:SEASONS,
+      datasets:[
+        { label:'IQR (25th–75th pct)', data, backgroundColor: SEASONS.map(s=>COLORS[s]+'88'), borderRadius:6, borderSkipped:false },
+        { label:'Median', type:'line', data:medians, borderColor:'#EFE9D8', backgroundColor:'#EFE9D8', pointRadius:5, pointStyle:'rectRot', showLine:false }
+      ]
+    },
+    options:{
+      maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:10,padding:16}} },
+      scales:{ y:{ title:{display:true,text:'Tonnes / Hectare'}, grid:{color:GRID} }, x:{ grid:{display:false} } }
+    }
+  });
+}
+
+// ---------------- CROP MIX (stacked bar of record counts) ----------------
+const CROP_COLORS = ['#4FA48C','#E0983D','#C2603E','#8FA091','#E8B75C','#6B8F9E','#B08968','#7DBE96'];
+function renderCropMix(){
+  const datasets = DATA.crops.map((crop,i)=>({
+    label: crop,
+    data: SEASONS.map(s => DATA.crop_counts[s][crop] || 0),
+    backgroundColor: CROP_COLORS[i % CROP_COLORS.length],
+    borderRadius:3,
+  }));
+  charts.cropMix = new Chart(document.getElementById('cropMix'), {
+    type:'bar',
+    data:{ labels: SEASONS, datasets },
+    options:{
+      maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{boxWidth:9, padding:10, font:{size:10.5}} } },
+      scales:{ x:{ stacked:true, grid:{display:false} }, y:{ stacked:true, title:{display:true,text:'Records'}, grid:{color:GRID} } }
+    }
+  });
+}
+
+// ---------------- CROP x SEASON HEATMAPS ----------------
+function colorScale(value, max, base){
+  const t = Math.max(0, Math.min(1, value/max));
+  const alpha = 0.12 + t*0.75;
+  return base + Math.round(alpha*255).toString(16).padStart(2,'0');
+}
+function divergingColor(value, maxAbs, posBase, negBase){
+  const t = Math.max(-1, Math.min(1, value/maxAbs));
+  const alpha = 0.10 + Math.abs(t)*0.75;
+  const base = t>=0 ? posBase : negBase;
+  return base + Math.round(alpha*255).toString(16).padStart(2,'0');
+}
+
+function renderCropHeatmaps(){
+  // Yield heatmap
+  const yieldVals = DATA.crops.flatMap(c => SEASONS.map(s => DATA.crop_season_yield[c][s]));
+  const maxYield = Math.max(...yieldVals);
+  let html = '<table class="heatmap"><tr><th>Crop</th>' + SEASONS.map(s=>`<th>${s}</th>`).join('') + '</tr>';
+  DATA.crops.forEach(c=>{
+    html += `<tr><td class="rowlabel">${c}</td>` + SEASONS.map(s=>{
+      const v = DATA.crop_season_yield[c][s];
+      return `<td style="background:${colorScale(v, maxYield, '#4FA48C')}">${v}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('cropYieldHeatmap').innerHTML = html;
+
+  // Profit heatmap
+  const profitVals = DATA.crops.flatMap(c => SEASONS.map(s => DATA.crop_season_profit[c][s]));
+  const maxAbsProfit = Math.max(...profitVals.map(Math.abs));
+  let html2 = '<table class="heatmap"><tr><th>Crop</th>' + SEASONS.map(s=>`<th>${s}</th>`).join('') + '</tr>';
+  DATA.crops.forEach(c=>{
+    html2 += `<tr><td class="rowlabel">${c}</td>` + SEASONS.map(s=>{
+      const v = DATA.crop_season_profit[c][s];
+      return `<td style="background:${divergingColor(v, maxAbsProfit, '#7DBE96', '#D46A5A')}">${fmtINR(v)}</td>`;
+    }).join('') + '</tr>';
+  });
+  html2 += '</table>';
+  document.getElementById('cropProfitHeatmap').innerHTML = html2;
+}
+
+// ---------------- ECONOMICS ----------------
+function renderEconomics(){
+  const cost = SEASONS.map(s=>DATA.season_kpi[s].avg_cost);
+  const revenue = SEASONS.map(s=>DATA.season_kpi[s].avg_revenue);
+  charts.costRevenue = new Chart(document.getElementById('costRevenue'), {
+    type:'bar',
+    data:{ labels:SEASONS, datasets:[
+      { label:'Avg. cost', data:cost, backgroundColor:'#D46A5A99', borderRadius:6 },
+      { label:'Avg. revenue', data:revenue, backgroundColor:'#7DBE9699', borderRadius:6 },
+    ]},
+    options:{ maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:10,padding:16}},
+        tooltip:{ callbacks:{ label:(ctx)=> ctx.dataset.label+': '+fmtINR(ctx.raw) } } },
+      scales:{ y:{ ticks:{ callback:(v)=>fmtINR(v) }, grid:{color:GRID} }, x:{grid:{display:false}} }
+    }
+  });
+
+  const profitData = SEASONS.map(s=>{ const b=DATA.profit_box[s]; return [b.q1,b.q3]; });
+  const profitMedian = SEASONS.map(s=>DATA.profit_box[s].median);
+  charts.profitRange = new Chart(document.getElementById('profitRange'), {
+    type:'bar',
+    data:{ labels:SEASONS, datasets:[
+      { label:'IQR', data:profitData, backgroundColor: SEASONS.map(s=>COLORS[s]+'88'), borderRadius:6, borderSkipped:false },
+      { label:'Median', type:'line', data:profitMedian, borderColor:'#EFE9D8', pointRadius:5, pointStyle:'rectRot', showLine:false }
+    ]},
+    options:{ maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:10,padding:16}},
+        tooltip:{ callbacks:{ label:(ctx)=> Array.isArray(ctx.raw)? 'Q1–Q3: '+fmtINR(ctx.raw[0])+' to '+fmtINR(ctx.raw[1]) : 'Median: '+fmtINR(ctx.raw) } } },
+      scales:{ y:{ ticks:{ callback:(v)=>fmtINR(v) }, grid:{color:GRID} }, x:{grid:{display:false}} }
+    }
+  });
+
+  const lossPct = currentSeason==='All' ? DATA.overall.loss_pct : DATA.season_kpi[currentSeason].loss_pct;
+  if(charts.lossDonut) charts.lossDonut.destroy();
+  charts.lossDonut = new Chart(document.getElementById('lossDonut'), {
+    type:'doughnut',
+    data:{ labels:['Loss-making','Profitable'], datasets:[{
+      data:[lossPct, 100-lossPct],
+      backgroundColor:['#D46A5A', '#7DBE96'],
+      borderColor: '#1A2E23', borderWidth:3,
+    }]},
+    options:{ maintainAspectRatio:false, cutout:'68%',
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:10,padding:16}} } }
+  });
+}
+
+// ---------------- RESOURCES ----------------
+function renderResources(){
+  const fert = SEASONS.map(s=>DATA.season_kpi[s].avg_fertilizer);
+  const pest = SEASONS.map(s=>DATA.season_kpi[s].avg_pesticide*10); // scaled for visibility
+  const watereff = SEASONS.map(s=>DATA.season_kpi[s].avg_water_eff*10);
+  charts.resourceBars = new Chart(document.getElementById('resourceBars'), {
+    type:'bar',
+    data:{ labels:SEASONS, datasets:[
+      { label:'Fertilizer (kg/ha)', data:fert, backgroundColor:'#E0983D99', borderRadius:6 },
+      { label:'Pesticide (×0.1 L/ha)', data:pest, backgroundColor:'#C2603E99', borderRadius:6 },
+      { label:'Water efficiency (×0.1 t/1000m³)', data:watereff, backgroundColor:'#4FA48C99', borderRadius:6 },
+    ]},
+    options:{ maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:9,padding:10,font:{size:10.5}}} },
+      scales:{ y:{ grid:{color:GRID} }, x:{grid:{display:false}} }
+    }
+  });
+
+  const methods = DATA.irrigation_methods;
+  const mcolors = {Drip:'#4FA48C', Flood:'#6B8F9E', Rainfed:'#B08968', Sprinkler:'#E0983D'};
+  const datasets = methods.map(m=>({
+    label:m,
+    data: SEASONS.map(s=>DATA.irrigation[s][m]),
+    backgroundColor: mcolors[m] || '#E8B75C',
+    borderRadius:3,
+  }));
+  charts.irrigationStack = new Chart(document.getElementById('irrigationStack'), {
+    type:'bar',
+    data:{ labels:SEASONS, datasets },
+    options:{ maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:9,padding:10,font:{size:10.5}}},
+        tooltip:{ callbacks:{ label:(ctx)=> ctx.dataset.label+': '+ctx.raw+'%' } } },
+      scales:{ x:{ stacked:true, grid:{display:false} }, y:{ stacked:true, ticks:{callback:v=>v+'%'}, grid:{color:GRID} } }
+    }
+  });
+}
+
+// ---------------- STATE HEATMAP ----------------
+function renderStateHeatmap(){
+  const src = stateMetric==='yield' ? DATA.state_season_yield : DATA.state_season_profit;
+  const vals = DATA.states.flatMap(st => SEASONS.map(s=>src[st][s]));
+  let html;
+  if(stateMetric==='yield'){
+    const max = Math.max(...vals);
+    html = '<table class="heatmap"><tr><th>State</th>' + SEASONS.map(s=>`<th>${s}</th>`).join('') + '</tr>';
+    DATA.states.forEach(st=>{
+      html += `<tr><td class="rowlabel">${st}</td>` + SEASONS.map(s=>{
+        const v = src[st][s];
+        return `<td style="background:${colorScale(v, max, '#4FA48C')}">${v}</td>`;
+      }).join('') + '</tr>';
+    });
+  } else {
+    const maxAbs = Math.max(...vals.map(Math.abs));
+    html = '<table class="heatmap"><tr><th>State</th>' + SEASONS.map(s=>`<th>${s}</th>`).join('') + '</tr>';
+    DATA.states.forEach(st=>{
+      html += `<tr><td class="rowlabel">${st}</td>` + SEASONS.map(s=>{
+        const v = src[st][s];
+        return `<td style="background:${divergingColor(v, maxAbs, '#7DBE96', '#D46A5A')}">${fmtINR(v)}</td>`;
+      }).join('') + '</tr>';
+    });
+  }
+  html += '</table>';
+  document.getElementById('stateHeatmap').innerHTML = html;
+}
+
+// ---------------- CORRELATION TABLE ----------------
+function renderCorrTable(){
+  const cols = DATA.corr_cols;
+  const shortNames = {
+    Rainfall_mm:'Rain', Avg_Temperature_C:'Temp', Humidity_pct:'Humid', Sunlight_Hours_Day:'Sun',
+    Soil_Moisture_pct:'Soil M.', Fertilizer_kg_ha:'Fert.', Water_Used_m3:'Water',
+    Yield_Tonnes_Ha:'Yield', Profit_INR:'Profit', Disease_Pest_Risk_pct:'Risk'
+  };
+  let html = '<table class="corr-table"><tr><th></th>' + cols.map(c=>`<th>${shortNames[c]}</th>`).join('') + '</tr>';
+  DATA.corr_matrix.forEach((row,i)=>{
+    html += `<tr><td class="corr-label">${shortNames[cols[i]]}</td>` + row.map(v=>{
+      const bg = divergingColor(v, 1, '#4FA48C', '#C2603E');
+      return `<td style="background:${bg}">${v.toFixed(2)}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('corrTable').innerHTML = html;
+}
+
+// ---------------- ANOVA ----------------
+function renderAnova(){
+  const labels = { Yield_Tonnes_Ha:'Yield', Profit_INR:'Profit', Rainfall_mm:'Rainfall', Disease_Pest_Risk_pct:'Disease Risk' };
+  const grid = document.getElementById('anovaGrid');
+  grid.innerHTML = Object.entries(DATA.anova).map(([key,v])=>`
+    <div class="anova-card">
+      <div class="metric">${labels[key]}</div>
+      <div class="pval">p = ${v.p < 0.001 ? '<0.001' : v.p}</div>
+      <div class="tag ${v.significant? 'sig':'nosig'}">${v.significant? 'Significant' : 'Not significant'}</div>
+    </div>
+  `).join('');
+}
+
+// ---------------- INSIGHTS ----------------
+const INSIGHTS = [
+  ['Kharif leads on profit, Zaid runs at a loss', 'Average profit per farm is highest in Kharif (₹1.79L) and turns negative in Zaid (–₹25k), largely due to the low rainfall and high irrigation cost of the summer season.'],
+  ['Yield differences across seasons are not statistically significant', 'The ANOVA test on Yield_Tonnes_Ha returns p ≈ 0.31 — seasonal timing alone does not reliably predict yield; crop and region matter more.'],
+  ['Profit, rainfall and disease risk do differ significantly by season', 'All three show p < 0.001 in the ANOVA test, confirming these are genuine seasonal effects rather than random variation.'],
+  ['Sugarcane and Chilli are the standout performers in every season', 'Both post strongly positive profit across Kharif, Rabi and Zaid, while Rice, Wheat and Maize run at a loss in most seasons — crop choice outweighs season choice.'],
+  ['Close to half of all farms lose money, regardless of season', 'Loss-making farms range from 42% (Kharif) to 65% (Zaid) — cost and market price volatility are as important as climate.'],
+  ['Zaid farms lean hardest on Drip and Sprinkler irrigation', 'With rainfall down to ~300mm on average, Zaid season shows the highest combined share of efficient irrigation methods, but also the lowest water efficiency (t produced per 1000m³).'],
+  ['The best season is not the same in every state', 'Punjab performs best in Rabi, while Karnataka and Madhya Pradesh do comparatively well in Zaid — seasonal recommendations should be regionalised, not national.'],
+  ['No single environmental factor strongly predicts yield or profit', 'Correlations between individual variables (rainfall, temperature, fertilizer, water) and outcomes are weak — performance is driven by a combination of crop, region, season and input management together.'],
+];
+function renderInsights(){
+  document.getElementById('insightList').innerHTML = INSIGHTS.map((it,i)=>`
+    <div class="insight">
+      <div class="num">${String(i+1).padStart(2,'0')}</div>
+      <div class="body"><h4>${it[0]}</h4><p>${it[1]}</p></div>
+    </div>
+  `).join('');
+}
+
+// ---------------- TAB HANDLING ----------------
+document.getElementById('seasonTabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.season-tab');
+  if(!btn) return;
+  document.querySelectorAll('.season-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentSeason = btn.dataset.season;
+  renderKPIs();
+  renderEconomics(); // updates loss donut for the selected season
+});
+
+document.getElementById('stateToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#stateToggle button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  stateMetric = btn.dataset.metric;
+  renderStateHeatmap();
+});
+
+// ---------------- INIT ----------------
+renderKPIs();
+renderClimate();
+renderYieldRange();
+renderCropMix();
+renderCropHeatmaps();
+renderEconomics();
+renderResources();
+renderStateHeatmap();
+renderCorrTable();
+renderAnova();
+renderInsights();
+</script>
+</body>
+</html>
