@@ -1,8 +1,10 @@
-# Seasonal-Agriculture-Performance-Analysis
-The project analyzes 4,000 agricultural records across Kharif, Rabi, and Zaid seasons to identify variations in agricultural performance. It examines environmental conditions, soil characteristics, farming inputs, irrigation methods, crop yield, production, water usage, disease risk, and economic outcomes. 
 <div align="center">
 
 # 🌾 Seasonal Agriculture Performance Analysis
+
+### 📊 Seasonal Agriculture Performance Analysis
+
+**Analysis of 4,000 Agricultural Records across Kharif, Rabi & Zaid Seasons**
 
 </div>
 
@@ -57,20 +59,22 @@ The dataset contains agricultural records covering different seasons, crops, geo
 
 ### 🌦️ Seasons Covered
 
-- 🌧️ Kharif
-- ❄️ Rabi
-- ☀️ Zaid
+| Season | Description |
+|---|---|
+| 🌧️ **Kharif** | Kharif |
+| ❄️ **Rabi** | Rabi |
+| ☀️ **Zaid** | Zaid |
 
 ### 🌱 Crops Covered
 
-- Wheat
-- Rice
-- Maize
-- Pulses
-- Cotton
-- Chilli
-- Groundnut
-- Sugarcane
+- 🌾 Wheat
+- 🌾 Rice
+- 🌽 Maize
+- 🌱 Pulses
+- 🌿 Cotton
+- 🌶️ Chilli
+- 🥜 Groundnut
+- 🌾 Sugarcane
 
 ### 🌍 Agricultural Factors
 
@@ -203,9 +207,6 @@ The project investigates questions such as:
 
 The project follows the following workflow:
 
-```text
-## 🔄 Data Analysis Workflow
-
 | Step | Analysis Stage |
 |---:|---|
 | 1️⃣ | **Data Collection** |
@@ -221,7 +222,6 @@ The project follows the following workflow:
 | 1️⃣1️⃣ | **Conclusions** |
 | 1️⃣2️⃣ | **Recommendations** |
 
----
 ---
 
 ## 💻 Technologies Used
@@ -255,3 +255,15 @@ The project uses appropriate visualization techniques such as:
 | 🔥 **Correlation Heatmaps** | Correlation |
 
 ---
+
+## 📁 Project Files
+
+```text
+Seasonal-Agriculture-Performance-Analysis/
+│
+├── 📄 Major Project_Seasonal Agriculture Performance Analysis.pdf
+├── 🌐 Seasonal_Agriculture_Dashboard.html
+├── 📓 Seasonal_Agriculture_Performance_Analysis.ipynb
+├── 📊 seasonal_agriculture_performance_dataset.csv
+│
+└── 📘 README.md
