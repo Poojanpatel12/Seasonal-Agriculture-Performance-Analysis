@@ -204,61 +204,54 @@ The project investigates questions such as:
 The project follows the following workflow:
 
 ```text
-1. Data Collection
-        ↓
-2. Data Exploration
-        ↓
-3. Data Cleaning
-        ↓
-4. Data Preparation
-        ↓
-5. Exploratory Data Analysis
-        ↓
-6. Statistical Analysis
-        ↓
-7. Data Visualization
-        ↓
-8. Pattern Identification
-        ↓
-9. Relationship Analysis
-        ↓
-10. Insight Generation
-        ↓
-11. Conclusions
-        ↓
-12. Recommendations
+## 🔄 Data Analysis Workflow
+
+| Step | Analysis Stage |
+|---:|---|
+| 1️⃣ | **Data Collection** |
+| 2️⃣ | **Data Exploration** |
+| 3️⃣ | **Data Cleaning** |
+| 4️⃣ | **Data Preparation** |
+| 5️⃣ | **Exploratory Data Analysis** |
+| 6️⃣ | **Statistical Analysis** |
+| 7️⃣ | **Data Visualization** |
+| 8️⃣ | **Pattern Identification** |
+| 9️⃣ | **Relationship Analysis** |
+| 🔟 | **Insight Generation** |
+| 1️⃣1️⃣ | **Conclusions** |
+| 1️⃣2️⃣ | **Recommendations** |
 
 ---
+---
 
-💻 Technologies Used
-🐍 Programming Language
-Python
-📓 Development Environment
-Jupyter Notebook
-📚 Python Libraries
-Pandas
-NumPy
-Matplotlib
-Seaborn
-📈 Visualization Techniques
+## 💻 Technologies Used
+
+### 🐍 Programming Language
+
+> **Python**
+
+### 📓 Development Environment
+
+> **Jupyter Notebook**
+
+### 📚 Python Libraries
+
+- 🐼 **Pandas**
+- 🔢 **NumPy**
+- 📊 **Matplotlib**
+- 📈 **Seaborn**
+
+### 📈 Visualization Techniques
 
 The project uses appropriate visualization techniques such as:
 
-📊 Bar Charts
-📈 Line Charts
-📉 Histograms
-📦 Box Plots
-🔵 Scatter Plots
-🔥 Correlation Heatmaps
-📁 Project Files
-Seasonal-Agriculture-Performance-Analysis/
-│
-├── 📄 Major Project_Seasonal Agriculture Performance Analysis.pdf
-├── 🌐 Seasonal_Agriculture_Dashboard.html
-├── 📓 Seasonal_Agriculture_Performance_Analysis.ipynb
-├── 📊 seasonal_agriculture_performance_dataset.csv
-│
-└── 📘 README.md
-<div align="center">
-🌾 Seasonal Agriculture Performance Analysis 🌾
-</div> ```
+| Visualization | Purpose |
+|---|---|
+| 📊 **Bar Charts** | Comparison |
+| 📈 **Line Charts** | Trends |
+| 📉 **Histograms** | Distribution |
+| 📦 **Box Plots** | Variation |
+| 🔵 **Scatter Plots** | Relationships |
+| 🔥 **Correlation Heatmaps** | Correlation |
+
+---
