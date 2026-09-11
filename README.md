@@ -230,43 +230,35 @@ The project follows the following workflow:
 
 ---
 
-## Technologies Used
-
-### Programming Language
-
-- Python
-
-### Development Environment
-
-- Jupyter Notebook
-
-### Python Libraries
-
-- Pandas
-- NumPy
-- Matplotlib
-- Seaborn
-
-### Visualization Techniques
+💻 Technologies Used
+🐍 Programming Language
+Python
+📓 Development Environment
+Jupyter Notebook
+📚 Python Libraries
+Pandas
+NumPy
+Matplotlib
+Seaborn
+📈 Visualization Techniques
 
 The project uses appropriate visualization techniques such as:
 
-- Bar Charts
-- Line Charts
-- Histograms
-- Box Plots
-- Scatter Plots
-- Correlation Heatmaps
-
----
-
-## Project Files
-
-```text
+📊 Bar Charts
+📈 Line Charts
+📉 Histograms
+📦 Box Plots
+🔵 Scatter Plots
+🔥 Correlation Heatmaps
+📁 Project Files
 Seasonal-Agriculture-Performance-Analysis/
 │
-├── Major Project_Seasonal Agriculture Performance Analysis.pdf
-├── Seasonal_Agriculture_Dashboard.html
-├── Seasonal_Agriculture_Performance_Analysis.ipynb
-├── seasonal_agriculture_performance_dataset.csv
-└── README.md
+├── 📄 Major Project_Seasonal Agriculture Performance Analysis.pdf
+├── 🌐 Seasonal_Agriculture_Dashboard.html
+├── 📓 Seasonal_Agriculture_Performance_Analysis.ipynb
+├── 📊 seasonal_agriculture_performance_dataset.csv
+│
+└── 📘 README.md
+<div align="center">
+🌾 Seasonal Agriculture Performance Analysis 🌾
+</div> ```
